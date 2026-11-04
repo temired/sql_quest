@@ -1,0 +1,44 @@
+# SQL-Quest ⚔️
+
+Ein Terminal-Spiel, das dir SQL komplett beibringt – von `SELECT *` bis zu Indizes und Normalisierung.
+Gespielt wird in der RPG-Spielwelt aus dem Unterricht (gilden, spieler, gegenstaende, inventar, monster, quests).
+
+## Starten
+- **Doppelklick auf `start.bat`**, oder
+- im Terminal in diesem Ordner: `python spielen.py`
+
+Du brauchst nur Python (3.12+). Keine Installation, keine MySQL-Verbindung nötig – das Spiel nutzt SQLite,
+das in Python eingebaut ist, und versteht die wichtigsten MySQL-Schreibweisen
+(`AUTO_INCREMENT`, `SHOW TABLES`, `DESCRIBE`, `YEAR()`, `CONCAT()`, `LIMIT 10, 5`, `GROUP_CONCAT(... SEPARATOR ...)`, `ENUM`, `TRUNCATE` ...).
+
+## So funktioniert's
+- 11 Kapitel, jedes mit Lektionen (Theorie → Aufgaben) und einem **Bosskampf**.
+- Du tippst SQL, das Spiel führt es auf einer frischen Datenbank aus und vergleicht das **Ergebnis**
+  mit der Musterlösung. Es zählt also jede richtige Lösung, nicht nur genau eine Schreibweise.
+- XP sammeln, Ränge aufsteigen. Hinweise kosten ein paar XP, die Musterlösung fast alle.
+
+| Befehl | Wirkung |
+|---|---|
+| `.h` | Hinweis |
+| `.e` | erwartetes Ergebnis anzeigen |
+| `.l` | Musterlösung |
+| `.t` / `.s spieler` | Tabellen / Struktur einer Tabelle |
+| `.p SELECT ...` | etwas ausprobieren, ohne es abzugeben |
+| `.d` | Inhalt von `antwort.sql` abgeben (für lange Befehle im Editor) |
+| `.theorie` | Theorie nochmal |
+| `.w` / `.m` | Aufgabe überspringen / Menü |
+
+## Dateien
+| Datei | Zweck |
+|---|---|
+| `LEHRPLAN.md` | Was in welchem Kapitel drankommt (vollständige Themenliste) |
+| `SPICKZETTEL.md` | Alle Befehle kompakt zum Nachschlagen |
+| `antwort.sql` | Dein Notizblock für lange Abfragen → im Spiel `.d` |
+| `sandbox.db` | Deine freie Spielwiese (Menü → S), bleibt gespeichert |
+| `fortschritt.json` | Dein Spielstand |
+| `daten/welt.sql` | Die Spielwelt (Daten des Lehrers + 3 gildenlose Spieler, 1 Gegenstand ohne Wert, 1 Quest ohne Monster für NULL-Übungen) |
+| `test_loesungen.py` | Selbsttest: prüft, dass alle Musterlösungen funktionieren |
+
+## Unterschiede zu MySQL, die du kennen solltest
+Im Spiel stehen sie als lila **MySQL ▸** Hinweise direkt in der Theorie. Die wichtigsten:
+`7 / 2` ist hier `3` (MySQL: `3.5`), `ALTER TABLE ... MODIFY` gibt es nicht, und `||` ist in MySQL ein ODER (dort `CONCAT` benutzen).
