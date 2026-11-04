@@ -14,6 +14,7 @@ import webbrowser
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import urlparse
 
+from ablauf import ablauf, AblaufFehler
 from engine import BASIS, neue_db, ausfuehren, pruefe_aufgabe_roh, erwartet, leere_tabellenliste
 from kapitel import ALLE_KAPITEL
 from spielstand import (Fortschritt, aufgaben_ids, alle_ids, finde_aufgabe, basis_xp,
@@ -207,6 +208,23 @@ def api_sandbox_reset(_):
     return {"ok": True}
 
 
+def api_ablauf(d):
+    quelle = db_fuer(d["id"])
+    if d["id"] == "sandbox":
+        # in einer Kopie arbeiten, damit die Ablauf-Ansicht die Sandbox nicht verändert
+        conn = neue_db(mit_welt=False)
+        quelle.backup(conn)
+        quelle.close()
+    else:
+        conn = quelle
+    try:
+        return {"schritte": ablauf(conn, d.get("sql", ""))}
+    except AblaufFehler as e:
+        return {"fehler": str(e)}
+    finally:
+        conn.close()
+
+
 def api_reset(_):
     Fortschritt().zuruecksetzen()
     return {"ok": True}
@@ -214,7 +232,8 @@ def api_reset(_):
 
 API = {"uebersicht": api_uebersicht, "aufgabe": api_aufgabe, "hinweis": api_hinweis, "loesung": api_loesung,
        "erwartet": api_erwartet, "ausfuehren": api_ausfuehren, "abgeben": api_abgeben, "quiz": api_quiz,
-       "schema": api_schema, "vorschau": api_vorschau, "sandbox_reset": api_sandbox_reset, "reset": api_reset}
+       "schema": api_schema, "vorschau": api_vorschau, "sandbox_reset": api_sandbox_reset, "reset": api_reset,
+       "ablauf": api_ablauf}
 
 
 # ---------------------------------------------------------------------------

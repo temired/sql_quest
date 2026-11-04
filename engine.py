@@ -261,6 +261,14 @@ def uebersetze(stmt):
         return None, ("ALTER TABLE ... ADD CONSTRAINT/FOREIGN KEY/PRIMARY KEY geht in MySQL, aber nicht in SQLite. "
                       "Im Spiel bitte Schlüssel direkt im CREATE TABLE angeben.")
 
+    m = re.match(r"^ALTER\s+TABLE\s+\S+\s+RENAME\s+(?!COLUMN\b|TO\b|AS\b)(\S+)\s+TO\s+(\S+)$", oben)
+    if m:
+        raise MySQLFehler(f"In MySQL heißt es RENAME COLUMN {m.group(1).lower()} TO {m.group(2).lower()} – ohne COLUMN "
+                          "versteht MySQL 'benenne die TABELLE um' und meldet einen Syntaxfehler.")
+    # MySQL: "ALTER TABLE a RENAME AS b" und "ALTER TABLE a RENAME b" benennen die Tabelle um
+    m = re.match(r"^ALTER\s+TABLE\s+`?(\w+)`?\s+RENAME\s+(?:AS\s+)?`?(\w+)`?$", kern, flags=re.I)
+    if m and m.group(2).upper() != "TO":
+        return f"ALTER TABLE {m.group(1)} RENAME TO {m.group(2)}", None
     if re.match(r"^(CREATE|ALTER)\s+TABLE", oben):
         _pruefe_datentypen(kern)
         s = _ersetze_auto_increment(s)

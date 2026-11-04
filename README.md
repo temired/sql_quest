@@ -39,7 +39,12 @@ im Spielordner, auf deinem Rechner. Nach dem Beenden oder einem Neustart des PCs
 
 **In der Oberfläche:** `Strg+Enter` führt aus, `Strg+Shift+Enter` gibt ab, `Strg+/` kommentiert Zeilen aus.
 Links gibt es die Reiter Aufgabe, Theorie und Tabellen (Klick auf einen Spaltennamen fügt ihn in den Editor ein),
-unten rechts Ergebnis, Erwartet und Lösung. Mit 🧪 Sandbox kannst du frei üben, ⚔️ SQL-Quest öffnet die Kapitelübersicht.
+unten rechts Ergebnis, Ablauf, Erwartet und Lösung.
+
+**🔍 Ablauf:** Zeigt für jede SELECT-Abfrage Schritt für Schritt, was die Datenbank macht – in der echten
+Ausführungsreihenfolge FROM → JOIN → WHERE → GROUP BY → HAVING → SELECT → ORDER BY → LIMIT, mit Zwischenergebnis.
+Rausgefilterte Zeilen sind durchgestrichen, Gruppen eingefärbt, NULL-Auffüllungen beim LEFT JOIN gelb markiert.
+Im Terminal: `.a SELECT ...` Mit 🧪 Sandbox kannst du frei üben, ⚔️ SQL-Quest öffnet die Kapitelübersicht.
 
 **Im Terminal:**
 
@@ -50,6 +55,7 @@ unten rechts Ergebnis, Erwartet und Lösung. Mit 🧪 Sandbox kannst du frei üb
 | `.l` | Musterlösung |
 | `.t` / `.s spieler` | Tabellen / Struktur einer Tabelle |
 | `.p SELECT ...` | etwas ausprobieren, ohne es abzugeben |
+| `.a SELECT ...` | Ablauf Schritt für Schritt anzeigen |
 | `.d` | Inhalt von `antwort.sql` abgeben (für lange Befehle im Editor) |
 | `.theorie` | Theorie nochmal |
 | `.w` / `.m` | Aufgabe überspringen / Menü |

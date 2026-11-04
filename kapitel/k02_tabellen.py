@@ -185,7 +185,8 @@ KAPITEL = {
                 !   `ALTER TABLE spieler MODIFY COLUMN klasse VARCHAR(40) NOT NULL;`
                 !   `ALTER TABLE spieler CHANGE alter_name neuer_name VARCHAR(40);`
                 ! und hat `RENAME TABLE monster TO kreaturen;` (versteht das Spiel auch).
-                ! Das Wort COLUMN ist bei ADD/DROP in MySQL optional.
+                ! Das Wort COLUMN ist bei ADD/DROP in MySQL optional – bei RENAME COLUMN ist es PFLICHT.
+                ! Ohne COLUMN bedeutet `ALTER TABLE gilden RENAME ...` nämlich: benenne die Tabelle um.
             """,
             "aufgaben": [
                 {

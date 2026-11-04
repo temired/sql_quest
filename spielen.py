@@ -10,6 +10,7 @@ import textwrap
 from engine import (BASIS, F, farbe, neue_db, ausfuehren, ergebnis_text, schema_text,
                     leere_tabellenliste, pruefe_aufgabe, tabelle_text, erwartet)
 from kapitel import ALLE_KAPITEL
+from ablauf import ablauf, AblaufFehler
 from spielstand import Fortschritt, aufgaben_ids, basis_xp as berechne_basis_xp, xp_fuer_loesung, xp_fuer_quiz
 
 ANTWORT_DATEI = BASIS / "antwort.sql"
@@ -23,6 +24,8 @@ BEFEHLE_HILFE = f"""{farbe('Befehle während einer Aufgabe:', F.FETT)}
   {farbe('.s NAME', F.CYAN)}     Struktur + erste Zeilen einer Tabelle
   {farbe('.d', F.CYAN)}          SQL aus der Datei antwort.sql abgeben (für lange Abfragen im Editor)
   {farbe('.p SQL', F.CYAN)}      SQL nur ausprobieren (zählt nicht als Antwort)
+  {farbe('.a SQL', F.CYAN)}      Ablauf Schritt für Schritt: was FROM, WHERE, GROUP BY … mit den Zeilen machen
+                (.a ohne SQL = deine letzte Eingabe)
   {farbe('.theorie', F.CYAN)}    Theorie der Lektion nochmal lesen
   {farbe('.w', F.CYAN)}          Aufgabe überspringen
   {farbe('.m', F.CYAN)}          zurück ins Menü
@@ -116,10 +119,11 @@ def spiele_aufgabe(aufgabe, aid, kopf, fp, theorie=None, ist_boss=False):
     if typ == "quiz":
         return spiele_quiz(aufgabe, aid, basis_xp, fp)
 
-    print(farbe("\n(.h Hinweis · .e erwartetes Ergebnis · .l Lösung · .s tabelle · .d antwort.sql · .? alle Befehle)", F.DIM))
+    print(farbe("\n(.h Hinweis · .e erwartet · .l Lösung · .a Ablauf · .s tabelle · .d antwort.sql · .? alle Befehle)", F.DIM))
     hinweise = aufgabe.get("hinweise", [])
     hinweis_nr = 0
     loesung_gesehen = False
+    letzte_eingabe = None
     while True:
         try:
             eing = lies_sql(farbe("\nSQL> ", F.GRUEN, F.FETT))
@@ -170,6 +174,12 @@ def spiele_aufgabe(aufgabe, aid, kopf, fp, theorie=None, ist_boss=False):
             if arg:
                 print(ergebnis_text(ausfuehren(neue_db(aufgabe.get("setup")), arg)))
             continue
+        if befehl in (".a", ".ablauf"):
+            if arg or letzte_eingabe:
+                zeige_ablauf(neue_db(aufgabe.get("setup")), arg or letzte_eingabe)
+            else:
+                print(farbe("Benutzung: .a SELECT ... ;", F.DIM))
+            continue
         if befehl in (".d", ".datei"):
             eing = lies_antwortdatei()
             if eing is None:
@@ -180,6 +190,7 @@ def spiele_aufgabe(aufgabe, aid, kopf, fp, theorie=None, ist_boss=False):
             print(farbe(f"Unbekannter Befehl {befehl}. .? zeigt alle Befehle.", F.ROT))
             continue
 
+        letzte_eingabe = eing
         ok, meldung, ausgabe = pruefe_aufgabe(aufgabe, eing)
         if ausgabe:
             print(ausgabe)
@@ -201,6 +212,31 @@ def spiele_aufgabe(aufgabe, aid, kopf, fp, theorie=None, ist_boss=False):
         print(farbe("✘ Noch nicht richtig. ", F.ROT, F.FETT) + (meldung or ""))
         if hinweis_nr < len(hinweise):
             print(farbe("  (Tipp: .h für einen Hinweis, .e für das erwartete Ergebnis)", F.DIM))
+
+
+def zeige_ablauf(conn, sql):
+    try:
+        schritte = ablauf(conn, sql)
+    except AblaufFehler as e:
+        print(farbe(f"Ablauf nicht möglich: {e}", F.ROT))
+        return
+    zeichen = {"raus": "✘ raus", "null": "∅ NULL", "drin": "✔ bleibt", "g0": "▌", "g1": "▐"}
+    for n, s in enumerate(schritte, 1):
+        print(farbe(f"\n── Schritt {n}/{len(schritte)}: {s['klausel']} – {s['titel']} ", F.GELB, F.FETT) + farbe("─" * 20, F.GELB))
+        if s["code"]:
+            print(farbe("   " + s["code"], F.CYAN))
+        print(textwrap.fill(s["text"], 100))
+        if s["spalten"]:
+            if any(s["marken"]):
+                print(tabelle_text(["→"] + s["spalten"], [[zeichen.get(m, "")] + z for m, z in zip(s["marken"], s["zeilen"])]))
+            else:
+                print(tabelle_text(s["spalten"], s["zeilen"]))
+        if n < len(schritte):
+            try:
+                if eingabe(farbe("[Enter] nächster Schritt · q = abbrechen ", F.DIM)).strip().lower() == "q":
+                    return
+            except KeyboardInterrupt:
+                return
 
 
 def spiele_quiz(aufgabe, aid, basis_xp, fp):
@@ -344,7 +380,7 @@ def sandbox():
     conn = neue_db(pfad=str(SANDBOX_DATEI), mit_welt=False)
     print(farbe("SANDBOX – freie SQL-Konsole", F.FETT, F.GELB))
     print("Alles, was du hier machst, wird in sandbox.db gespeichert (bleibt nach dem Beenden erhalten).")
-    print(farbe(".t Tabellen · .s NAME Struktur · .d antwort.sql ausführen · .reset Welt neu laden · .m Menü", F.DIM))
+    print(farbe(".t Tabellen · .s NAME Struktur · .a SQL Ablauf · .d antwort.sql ausführen · .reset Welt neu laden · .m Menü", F.DIM))
     while True:
         try:
             eing = lies_sql(farbe("\nsandbox> ", F.LILA, F.FETT))
@@ -360,6 +396,13 @@ def sandbox():
             teile = eing.split(None, 1)
             if len(teile) > 1:
                 print(schema_text(conn, teile[1].strip(" ;")))
+            continue
+        if befehl in (".a", ".ablauf"):
+            teile = eing.split(None, 1)
+            if len(teile) > 1:
+                kopie = neue_db(mit_welt=False)
+                conn.backup(kopie)   # Ablauf soll die Sandbox nicht verändern
+                zeige_ablauf(kopie, teile[1])
             continue
         if befehl == ".reset":
             conn.close()

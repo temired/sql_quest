@@ -148,6 +148,9 @@ KAPITEL = {
                 * Im ORDER BY schon.
                 ! MySQL (und SQLite) erlauben Aliase im HAVING/GROUP BY als Bonus – Standard-SQL nicht.
                 ? Eselsbrücke: "Fiese Wichtel Gruppieren Heimlich Seltene Ostereier Leise"
+                ? Live ansehen: Schreib eine Abfrage und klick auf 🔍 Ablauf (Terminal: .a SELECT ...).
+                ? Du siehst jeden dieser Schritte mit seinem Zwischenergebnis – welche Zeilen WHERE rauswirft,
+                ? welche Gruppen GROUP BY bildet, was HAVING übrig lässt.
             """,
             "aufgaben": [
                 {

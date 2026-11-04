@@ -199,6 +199,37 @@ table.ergebnis tr:hover td { background: #161d27; }
 .kontrolle-titel { color: var(--leise); font: 12px var(--mono); margin: 10px 0 2px; white-space: pre-wrap; }
 pre.loesung { background: var(--panel); border: 1px solid var(--rand); border-radius: 8px; padding: 12px 14px; font-size: 14px; white-space: pre-wrap; }
 
+/* ---------- Ablauf-Ansicht ---------- */
+.schritt-leiste { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; margin-bottom: 10px; }
+.schritt-chip {
+  border: 1px solid var(--rand); background: var(--panel-2); border-radius: 14px; padding: 2px 10px;
+  font: 12px var(--mono); color: var(--leise);
+}
+.schritt-chip:hover { border-color: var(--leise); color: var(--text); }
+.schritt-chip.aktiv { background: var(--gold); color: #1a1300; border-color: var(--gold); font-weight: 700; }
+.schritt-chip.erledigt { color: var(--text); }
+.schritt-pfeil { color: #4b5563; font-size: 12px; }
+.schritt-kopf { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; }
+.schritt-kopf .nr { color: var(--leise); font-size: 13px; }
+.schritt-kopf .klausel { color: var(--gold); font-weight: 700; font-family: var(--mono); }
+.schritt-kopf .knopf { padding: 3px 10px; font-size: 13px; }
+pre.schritt-code { background: var(--panel); border: 1px solid var(--rand); border-left: 3px solid var(--gold); border-radius: 6px; padding: 6px 12px; margin: 6px 0; font-size: 13.5px; white-space: pre-wrap; }
+.schritt-text { margin: 6px 0 10px; max-width: 900px; }
+.legende { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12px; color: var(--leise); margin: -4px 0 8px; }
+.legende span::before { content: ""; display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 5px; vertical-align: -1px; }
+.legende .l-raus::before { background: #5a2427; }
+.legende .l-null::before { background: #4d3c0e; }
+.legende .l-gruppe::before { background: linear-gradient(90deg, #1b2a3f 50%, #23331f 50%); }
+.legende .l-drin::before { background: #1f4d2b; }
+table.ergebnis tr.m-raus td { text-decoration: line-through; color: #8b5a5a; background: #22151a; }
+table.ergebnis tr.m-null td.null { background: #3a2f0c; color: #ffd25e; font-style: normal; font-weight: 600; }
+table.ergebnis tr.m-null td { background: #1f1b10; }
+table.ergebnis tr.m-g0 td { background: #16202e; }
+table.ergebnis tr.m-g1 td { background: #18241a; }
+table.ergebnis tr.m-g0 td:first-child { box-shadow: inset 3px 0 0 var(--blau); }
+table.ergebnis tr.m-g1 td:first-child { box-shadow: inset 3px 0 0 var(--gruen); }
+table.ergebnis tr.m-drin td { background: var(--gruen-bg); }
+
 /* ---------- Kapitelkarte ---------- */
 .overlay { position: fixed; inset: 0; background: rgba(1, 4, 9, .75); display: grid; place-items: center; z-index: 50; padding: 20px; }
 .karte-box { background: var(--panel); border: 1px solid var(--rand); border-radius: 14px; width: min(1000px, 100%); max-height: 100%; display: flex; flex-direction: column; }

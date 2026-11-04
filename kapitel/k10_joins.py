@@ -129,6 +129,9 @@ KAPITEL = {
                   `A RIGHT JOIN B` = `B LEFT JOIN A`. In der Praxis schreibt man fast immer LEFT JOIN.
 
                     INNER:  A ∩ B             LEFT: ganz A + passendes B          RIGHT: ganz B + passendes A
+
+                ? Probier's aus: Schreib den LEFT JOIN oben in den Editor und klick auf 🔍 Ablauf (Terminal: .a).
+                ? Im JOIN-Schritt siehst du gelb markiert, welche Zeilen keinen Partner hatten und mit NULL aufgefüllt wurden.
                 ---
                 # Anti-Join: "Was hat KEINEN Partner?"
                     SELECT g.gildenname

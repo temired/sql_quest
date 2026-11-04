@@ -50,6 +50,7 @@
     <div class="werkzeuge" id="werkzeuge">
       <button class="knopf gruen" id="btn-abgeben">▶ Abgeben</button>
       <button class="knopf" id="btn-ausfuehren">▷ Ausführen</button>
+      <button class="knopf" id="btn-ablauf" title="Zeigt Schritt für Schritt, was jede Klausel mit den Zeilen macht">🔍 Ablauf</button>
       <button class="knopf leise" id="btn-hinweis">💡 Hinweis</button>
       <button class="knopf leise" id="btn-erwartet">🎯 Erwartet</button>
       <button class="knopf leise" id="btn-loesung">👁 Lösung</button>
@@ -63,10 +64,12 @@
     <div class="ausgabe" id="ausgabe-bereich">
       <nav class="reiter klein" id="reiter-ausgabe">
         <button data-ausgabe="ergebnis" class="aktiv">Ergebnis</button>
+        <button data-ausgabe="ablauf">Ablauf</button>
         <button data-ausgabe="erwartet">Erwartet</button>
         <button data-ausgabe="loesung">Lösung</button>
       </nav>
       <div class="ausgabe-inhalt" id="ausgabe-ergebnis"><p class="leer">Noch nichts ausgeführt. Tipp: Strg+Enter.</p></div>
+      <div class="ausgabe-inhalt versteckt" id="ausgabe-ablauf"></div>
       <div class="ausgabe-inhalt versteckt" id="ausgabe-erwartet"></div>
       <div class="ausgabe-inhalt versteckt" id="ausgabe-loesung"></div>
     </div>

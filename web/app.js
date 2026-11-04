@@ -181,16 +181,17 @@ code.addEventListener("keydown", (e) => {
 // ---------------------------------------------------------------------------
 // Ausgabe
 // ---------------------------------------------------------------------------
-function tabelleHtml(erg) {
+function tabelleHtml(erg, marken = null) {
   if (!erg.spalten) return "";
   let h = '<table class="ergebnis"><thead><tr>' + erg.spalten.map((s) => `<th>${esc(s)}</th>`).join("") + "</tr></thead><tbody>";
-  for (const z of erg.zeilen) {
-    h += "<tr>" + z.map((v) => {
+  erg.zeilen.forEach((z, i) => {
+    const m = marken && marken[i] ? ` class="m-${marken[i]}"` : "";
+    h += `<tr${m}>` + z.map((v) => {
       if (v === null) return '<td class="null">NULL</td>';
       if (typeof v === "number") return `<td class="zahl">${esc(Number.isInteger(v) ? v : Math.round(v * 10000) / 10000)}</td>`;
       return `<td title="${esc(v)}">${esc(v)}</td>`;
     }).join("") + "</tr>";
-  }
+  });
   h += "</tbody></table>";
   const mehr = erg.anzahl > erg.zeilen.length ? ` – die ersten ${erg.zeilen.length} werden angezeigt` : "";
   return h + `<div class="zeilen-info">${erg.anzahl} Zeile(n)${mehr}</div>`;
@@ -209,7 +210,7 @@ function ergebnisHtml(erg) {
 
 function ausgabeReiter(name) {
   document.querySelectorAll("#reiter-ausgabe button").forEach((b) => b.classList.toggle("aktiv", b.dataset.ausgabe === name));
-  ["ergebnis", "erwartet", "loesung"].forEach((n) => $("#ausgabe-" + n).classList.toggle("versteckt", n !== name));
+  ["ergebnis", "ablauf", "erwartet", "loesung"].forEach((n) => $("#ausgabe-" + n).classList.toggle("versteckt", n !== name));
 }
 function zeigeAusgabe(html, reiter = "ergebnis") {
   $("#ausgabe-" + reiter).innerHTML = html;
@@ -384,15 +385,19 @@ document.addEventListener("keydown", (e) => { if (e.key === "Escape") $("#karte"
 // ---------------------------------------------------------------------------
 function knoepfeFuer(modus) {
   const sichtbar = {
-    sql: ["abgeben", "ausfuehren", "hinweis", "erwartet", "loesung", "leeren"],
+    sql: ["abgeben", "ausfuehren", "ablauf", "hinweis", "erwartet", "loesung", "leeren"],
     quiz: [],
-    sandbox: ["ausfuehren", "sandbox-reset", "leeren"],
+    sandbox: ["ausfuehren", "ablauf", "sandbox-reset", "leeren"],
   }[modus];
-  ["abgeben", "ausfuehren", "hinweis", "erwartet", "loesung", "sandbox-reset", "leeren"].forEach((n) =>
+  ["abgeben", "ausfuehren", "ablauf", "hinweis", "erwartet", "loesung", "sandbox-reset", "leeren"].forEach((n) =>
     $("#btn-" + n).classList.toggle("versteckt", !sichtbar.includes(n)));
   $("#editor").classList.toggle("versteckt", modus === "quiz");
   $("#quiz").classList.toggle("versteckt", modus !== "quiz");
   $("#werkzeuge").classList.toggle("versteckt", modus === "quiz");
+  document.querySelector('#reiter-ausgabe [data-ausgabe="ablauf"]').classList.toggle("versteckt", modus === "quiz");
+  ablaufStopp();
+  $("#ausgabe-ablauf").innerHTML = '<p class="leer">Schreib eine SELECT-Abfrage und klick auf 🔍 Ablauf: Du siehst Schritt für Schritt, ' +
+    "was FROM, JOIN, WHERE, GROUP BY, HAVING, SELECT, ORDER BY und LIMIT mit den Zeilen machen.</p>";
   document.querySelectorAll('#reiter-ausgabe [data-ausgabe="erwartet"], #reiter-ausgabe [data-ausgabe="loesung"]')
     .forEach((b) => b.classList.toggle("versteckt", modus !== "sql"));
 }
@@ -528,6 +533,7 @@ async function abgeben() {
 }
 
 $("#btn-ausfuehren").onclick = ausfuehrenKlick;
+$("#btn-ablauf").onclick = ablaufKlick;
 $("#btn-abgeben").onclick = abgeben;
 $("#btn-leeren").onclick = () => { if (code.value && confirm("Editor leeren?")) { setCode(""); speicher("entwurf." + S.id, ""); } };
 
@@ -570,6 +576,73 @@ $("#btn-loesung").onclick = async () => {
     <p class="leer">Tipp: Tipp sie lieber selbst ab – das bleibt besser hängen.</p>`, "loesung");
   $("#btn-uebernehmen").onclick = () => { setCode(r.loesung); speicher("entwurf." + S.id, r.loesung); code.focus(); };
 };
+
+// ---------------------------------------------------------------------------
+// Ablauf Schritt für Schritt
+// ---------------------------------------------------------------------------
+const ABLAUF = { schritte: [], i: 0, timer: null };
+
+async function ablaufKlick() {
+  if (!code.value.trim()) return toast("Erst eine SELECT-Abfrage schreiben 🙂");
+  ablaufStopp();
+  try {
+    const r = await api("ablauf", { id: S.id, sql: code.value });
+    if (r.fehler) return zeigeAusgabe(`<div class="fehler"><b>Ablauf nicht möglich:</b> ${esc(r.fehler)}</div>`, "ablauf");
+    ABLAUF.schritte = r.schritte;
+    ABLAUF.i = 0;
+    zeichneSchritt();
+  } catch (e) { fehlerAnzeigen(e); }
+}
+
+function ablaufStopp() {
+  clearInterval(ABLAUF.timer);
+  ABLAUF.timer = null;
+}
+
+const LEGENDE = {
+  raus: '<span class="l-raus">fällt weg</span>',
+  null: '<span class="l-null">mit NULL aufgefüllt (kein Partner)</span>',
+  g0: '<span class="l-gruppe">eine Farbe = eine Gruppe</span>',
+  drin: '<span class="l-drin">bleibt übrig</span>',
+};
+
+function zeichneSchritt() {
+  const { schritte, i } = ABLAUF;
+  const s = schritte[i];
+  const leiste = schritte.map((x, n) =>
+    `<button class="schritt-chip ${n === i ? "aktiv" : n < i ? "erledigt" : ""}" data-schritt="${n}">${n + 1} ${esc(x.klausel)}</button>`
+  ).join('<span class="schritt-pfeil">→</span>');
+  const arten = [...new Set(s.marken.filter(Boolean).map((m) => (m === "g1" ? "g0" : m)))];
+  const legende = arten.length ? `<div class="legende">${arten.map((a) => LEGENDE[a] || "").join("")}</div>` : "";
+  zeigeAusgabe(`
+    <div class="schritt-leiste">${leiste}</div>
+    <div class="schritt-kopf">
+      <span class="nr">Schritt ${i + 1} von ${schritte.length}</span>
+      <span class="klausel">${esc(s.klausel)}</span><span>– ${esc(s.titel)}</span>
+      <span class="luecke"></span>
+      <button class="knopf" id="ab-zurueck" ${i === 0 ? "disabled" : ""}>←</button>
+      <button class="knopf" id="ab-play">${ABLAUF.timer ? "⏸ Pause" : "▶ Abspielen"}</button>
+      <button class="knopf gruen" id="ab-weiter" ${i === schritte.length - 1 ? "disabled" : ""}>Nächster Schritt →</button>
+    </div>
+    ${s.code ? `<pre class="schritt-code">${highlight(s.code)}</pre>` : ""}
+    <p class="schritt-text">${inline(s.text)}</p>
+    ${legende}
+    ${s.spalten.length ? tabelleHtml(s, s.marken) : ""}`, "ablauf");
+  $("#ab-zurueck").onclick = () => { ablaufStopp(); ABLAUF.i--; zeichneSchritt(); };
+  $("#ab-weiter").onclick = () => { ablaufStopp(); ABLAUF.i++; zeichneSchritt(); };
+  $("#ab-play").onclick = () => {
+    if (ABLAUF.timer) { ablaufStopp(); zeichneSchritt(); return; }
+    if (ABLAUF.i >= ABLAUF.schritte.length - 1) ABLAUF.i = 0;
+    ABLAUF.timer = setInterval(() => {
+      if (ABLAUF.i >= ABLAUF.schritte.length - 1) { ablaufStopp(); zeichneSchritt(); return; }
+      ABLAUF.i++;
+      zeichneSchritt();
+    }, 3000);
+    zeichneSchritt();
+  };
+  document.querySelectorAll("[data-schritt]").forEach((b) =>
+    (b.onclick = () => { ablaufStopp(); ABLAUF.i = Number(b.dataset.schritt); zeichneSchritt(); }));
+}
 
 // ---------------------------------------------------------------------------
 // Quiz
