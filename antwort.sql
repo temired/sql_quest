@@ -1,0 +1,1 @@
+-- Schreib hier dein SQL, speichere die Datei und tippe im Spiel: .d
