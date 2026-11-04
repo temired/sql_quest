@@ -97,6 +97,7 @@ code, pre { font-family: var(--mono); }
 .inhalt code, .aufgabentext code, .feedback code {
   background: #262f3d; color: var(--cyan); padding: 1px 6px; border-radius: 4px; font-size: .92em;
 }
+.aufgabentext .eingerueckt { font-family: var(--mono); font-size: 14px; }
 .hinweis-box { margin-top: 14px; padding: 10px 14px; border-radius: 8px; background: #2a2410; border: 1px solid #5c4614; }
 .hinweis-box b { color: var(--gold); }
 .theorie-link { margin-top: 18px; }

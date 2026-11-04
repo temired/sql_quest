@@ -105,6 +105,43 @@ KAPITEL = {
 
                 ? Eselsbrücke: Definition = Gebäude bauen, Manipulation = Möbel umstellen,
                 ? Query = durchs Fenster schauen, Control = Schlüssel verteilen, Transaction = Umzug ganz oder gar nicht.
+                ---
+                # Was macht welcher Befehl? (Details folgen in den späteren Kapiteln)
+                DDL – die Struktur:
+                * `CREATE` – etwas Neues anlegen (Datenbank, Tabelle, Index, View).
+                * `ALTER` – etwas Bestehendes ändern (z.B. eine Spalte hinzufügen).
+                * `DROP` – etwas komplett löschen – die Tabelle samt allen Daten ist weg.
+                * `TRUNCATE` – alle Zeilen einer Tabelle löschen, die leere Tabelle bleibt stehen.
+                * `RENAME` – umbenennen.
+
+                DML – die Daten:
+                * `INSERT` – neue Zeilen einfügen.
+                * `UPDATE` – Werte in vorhandenen Zeilen ändern.
+                * `DELETE` – einzelne Zeilen löschen (mit WHERE auswählbar). Die Tabelle bleibt.
+
+                DQL – abfragen:
+                * `SELECT` – Daten lesen und anzeigen. Ändert nichts.
+
+                DCL – Rechte:
+                * `GRANT` – einem Benutzer ein Recht geben (z.B. darf lesen).
+                * `REVOKE` – ein Recht wieder wegnehmen.
+                ---
+                # TCL – Transaktionen
+                Eine Transaktion ist ein Paket von Befehlen, das entweder GANZ oder GAR NICHT ausgeführt wird.
+                Beispiel Überweisung: Gold bei Spieler A abziehen UND bei Spieler B gutschreiben – nie nur eins von beiden.
+
+                    START TRANSACTION;   -- Paket beginnen
+                    UPDATE ... ;         -- Änderung 1
+                    UPDATE ... ;         -- Änderung 2
+                    COMMIT;              -- Paket bestätigen: alles wird dauerhaft gespeichert
+
+                * `START TRANSACTION` (oder `BEGIN`) – ab hier wird gesammelt.
+                * `COMMIT` – alle Änderungen seit dem Start endgültig SPEICHERN.
+                * `ROLLBACK` – alle Änderungen seit dem Start RÜCKGÄNGIG machen, als wäre nichts passiert.
+                * `SAVEPOINT name` – einen Zwischenstand merken, zu dem man mit `ROLLBACK TO name` zurück kann.
+
+                ? Merke: COMMIT = "Ja, speichern!", ROLLBACK = "Nein, alles zurück!"
+                ? Befehle wie SAVE oder END gibt es dafür in SQL nicht.
             """,
             "aufgaben": [
                 {
@@ -159,6 +196,9 @@ KAPITEL = {
                 * Schlüsselwörter (SELECT, FROM) sind nicht case-sensitiv: `select` = `SELECT`.
                   Konvention: Schlüsselwörter GROSS, Tabellen-/Spaltennamen klein.
                 * Zeilenumbrüche und Leerzeichen sind egal – die Anweisung endet beim `;`.
+                * Das `;` TRENNT Anweisungen. Bei einer einzelnen Anweisung lassen es viele Programme durchgehen
+                  (MySQL Workbench, dieses Spiel). Im mysql-Terminal und bei mehreren Anweisungen hintereinander
+                  ist es Pflicht – gewöhn es dir also immer an.
                 ---
                 # Texte, Zahlen, Kommentare
                 * Texte (Strings) immer in EINFACHEN Anführungszeichen: `'Magier'`
@@ -215,7 +255,8 @@ KAPITEL = {
                     DESCRIBE spieler;      -- Spalten, Typen, Schlüssel einer Tabelle
 
                 Das Spiel versteht diese MySQL-Befehle und übersetzt sie für SQLite.
-                Zusätzlich gibt es die Spiel-Befehle `.t` (Tabellen) und `.s spieler` (Struktur + Beispielzeilen).
+                Mit einem SELECT und LIMIT siehst du dir die ersten Zeilen an: `SELECT * FROM spieler LIMIT 5;`
+                ? Das sind die Befehle, die du auch in MySQL Workbench und in der Prüfung benutzt.
                 ---
                 # MySQL vs. SQLite – die wichtigsten Unterschiede
                 * `USE`, `CREATE DATABASE` → im Spiel gibt es nur EINE Datenbank, wird ignoriert.
@@ -237,7 +278,7 @@ KAPITEL = {
                     "hinweise": ["DESCRIBE tabellenname; (Kurzform: DESC)"],
                 },
                 {
-                    "aufgabe": "Schau dir mit `.s gegenstaende` die Tabelle an. Zeige dann `name`, `typ` und `beschreibung` aller Gegenstände.",
+                    "aufgabe": "Schau dir zuerst mit `DESCRIBE gegenstaende;` die Spalten an (Ausführen). Zeige dann `name`, `typ` und `beschreibung` aller Gegenstände.",
                     "loesung": "SELECT name, typ, beschreibung FROM gegenstaende;",
                     "hinweise": ["Die Tabelle heißt gegenstaende (ae statt ä!)."],
                 },

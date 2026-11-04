@@ -34,6 +34,16 @@ KAPITEL = {
                   Man rechnet nicht damit, und führende Nullen ('01067') würden verschwinden.
                 * Datum als DATE, nicht als VARCHAR – sonst kann man nicht damit rechnen/sortieren.
                 * VARCHAR(n) großzügig, aber sinnvoll wählen (E-Mail: VARCHAR(255)).
+                ---
+                # VARCHAR oder TEXT?
+                Beides speichert Text – aber:
+                * `VARCHAR(50)` = Text mit einer HÖCHSTlänge (hier 50 Zeichen). Der Normalfall für Namen,
+                  Städte, E-Mails, Titel … Die DB prüft die Länge, und man kann gut danach suchen/sortieren.
+                * `TEXT` = langer Text OHNE sinnvolle Höchstlänge: Beschreibungen, Kommentare, Artikel.
+                  In MySQL schreibt man TEXT ohne Zahl dahinter.
+
+                ? So sind die Aufgaben formuliert: "Zeichenkette bis 50 Zeichen" heißt `VARCHAR(50)`.
+                ? "Ganzzahl" heißt `INT`, "Datum" heißt `DATE`, "wahr/falsch" heißt `BOOLEAN`.
 
                 ? SQLite ist beim Typ sehr locker (es speichert fast alles überall). MySQL ist streng.
                 ? Schreib im Spiel trotzdem immer die richtigen MySQL-Typen – das wird geprüft.
@@ -89,6 +99,11 @@ KAPITEL = {
                 * Spalten mit Komma trennen – nach der LETZTEN Spalte kein Komma!
                 * Am Ende `);`
                 * Tabellen- und Spaltennamen: klein, ohne Leerzeichen/Umlaute, mit `_` (snake_case).
+                * Jede Spalte MUSS einen Datentyp haben – `haendler_id,` allein ist ein Fehler.
+
+                ? Zusätze wie `PRIMARY KEY`, `AUTO_INCREMENT`, `NOT NULL` oder `DEFAULT` lernst du in Kapitel 3
+                ? (Constraints). In diesem Kapitel brauchst du nur Spaltenname + Datentyp. Schreibst du sie trotzdem
+                ? dazu, ist das kein Fehler.
 
                     CREATE TABLE IF NOT EXISTS haendler ( ... );
                 `IF NOT EXISTS` verhindert einen Fehler, falls es die Tabelle schon gibt.
@@ -102,8 +117,8 @@ KAPITEL = {
 
                 ! `utf8mb4` ist der richtige Zeichensatz in MySQL (kann auch Emojis). `utf8` ist veraltet.
 
-                ? Lange Befehle tippst du am besten in die Datei antwort.sql (im Ordner sql_quest),
-                ? speicherst sie und gibst sie im Spiel mit .d ab.
+                ? Im Terminal-Modus tippst du lange Befehle bequemer in die Datei antwort.sql und gibst sie mit .d ab.
+                ? (Das ist eine Spielfunktion, kein SQL. In der Browser-Oberfläche schreibst du einfach in den Editor.)
             """,
             "aufgaben": [
                 {
@@ -111,8 +126,8 @@ KAPITEL = {
                     "aufgabe": """
                         Lege die Tabelle `haendler` an mit den Spalten (in dieser Reihenfolge):
                           haendler_id  → Ganzzahl
-                          name         → Text (max. 50 Zeichen)
-                          stadt        → Text (max. 50 Zeichen)
+                          name         → Zeichenkette bis 50 Zeichen
+                          stadt        → Zeichenkette bis 50 Zeichen
                     """,
                     "loesung": "CREATE TABLE haendler (haendler_id INT, name VARCHAR(50), stadt VARCHAR(50));",
                     "pruefung": spalten("haendler"),
@@ -123,8 +138,8 @@ KAPITEL = {
                     "aufgabe": """
                         Lege die Tabelle `haustiere` an:
                           tier_id     → Ganzzahl
-                          name        → Text (max. 30)
-                          art         → Text (max. 30)
+                          name        → Zeichenkette bis 30 Zeichen
+                          art         → Zeichenkette bis 30 Zeichen
                           geburtstag  → Datum
                           gewicht_kg  → exakte Kommazahl, 5 Stellen gesamt, 2 nach dem Komma
                           ist_zahm    → wahr/falsch
@@ -139,7 +154,7 @@ KAPITEL = {
                     "typ": "aendern",
                     "aufgabe": """
                         Lege die Tabelle `turniere` an – aber so, dass KEIN Fehler kommt, falls sie schon existiert:
-                          turnier_id → Ganzzahl, name → Text (max. 80), datum → Datum, preisgeld → DECIMAL(10,2)
+                          turnier_id → Ganzzahl, name → Zeichenkette bis 80 Zeichen, datum → Datum, preisgeld → DECIMAL(10,2)
                         (Im Hintergrund existiert die Tabelle bereits mit genau diesen Spalten.)
                     """,
                     "setup": "CREATE TABLE turniere (turnier_id INT, name VARCHAR(80), datum DATE, preisgeld DECIMAL(10,2));",
@@ -270,13 +285,13 @@ KAPITEL = {
         "story": """
             # Der Baumeister fordert dich heraus!
             "Ein Turnier soll stattfinden – aber es fehlt die Tabelle!"
-            Du musst MEHRERE Befehle hintereinander abgeben. Tipp: Schreib sie in antwort.sql und gib sie mit .d ab.
+            Du musst MEHRERE Befehle hintereinander abgeben – jeden mit ; abschließen.
         """,
         "aufgabe": """
             1. Lege die Tabelle `turniere` an:
-                 turnier_id → Ganzzahl, name → Text (max. 80), datum → Datum,
+                 turnier_id → Ganzzahl, name → Zeichenkette bis 80 Zeichen, datum → Datum,
                  preisgeld → DECIMAL(10,2), max_teilnehmer → Ganzzahl
-            2. Füge danach mit ALTER TABLE die Spalte `ort` (Text, max. 50) hinzu.
+            2. Füge danach mit ALTER TABLE die Spalte `ort` (Zeichenkette bis 50 Zeichen) hinzu.
             3. Benenne danach die Spalte `max_teilnehmer` in `plaetze` um.
             4. Erstelle eine Kopie aller Waffen (typ = 'Waffe') aus `gegenstaende` als Tabelle `waffenkammer`.
         """,

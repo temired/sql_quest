@@ -159,6 +159,59 @@ def _ersetze_auto_increment(sql):
     return re.sub(r"\bAUTO_INCREMENT\b(\s*=\s*\d+)?", "", sql, flags=re.I)
 
 
+class MySQLFehler(Exception):
+    """SQL, das SQLite durchgehen ließe, MySQL aber ablehnt."""
+
+
+_KEIN_TYP = ("PRIMARY", "NOT", "NULL", "UNIQUE", "DEFAULT", "CHECK", "REFERENCES",
+             "AUTO_INCREMENT", "AUTOINCREMENT", "COLLATE", "GENERATED", "COMMENT")
+_TABELLEN_CONSTRAINT = ("PRIMARY", "FOREIGN", "UNIQUE", "CHECK", "CONSTRAINT", "KEY", "INDEX")
+
+
+def _oberste_teile(text):
+    """Teilt am Komma, aber nicht innerhalb von Klammern oder Strings."""
+    teile, tiefe, puffer, im_string = [], 0, "", False
+    for z in text:
+        if z == "'":
+            im_string = not im_string
+        elif not im_string and z == "(":
+            tiefe += 1
+        elif not im_string and z == ")":
+            tiefe -= 1
+        elif not im_string and z == "," and tiefe == 0:
+            teile.append(puffer)
+            puffer = ""
+            continue
+        puffer += z
+    return teile + [puffer]
+
+
+def _pruefe_spalte(definition):
+    woerter = definition.split()
+    if len(woerter) < 2 or woerter[1].upper().split("(")[0] in _KEIN_TYP:
+        name = woerter[0].strip("`\"") if woerter else "?"
+        raise MySQLFehler(f"Spalte '{name}' hat keinen Datentyp. In MySQL braucht jede Spalte einen, "
+                          f"z.B. {name} INT oder {name} VARCHAR(50).")
+
+
+def _pruefe_datentypen(kern):
+    """MySQL verlangt bei jeder Spalte einen Datentyp – SQLite nicht. Hier wie MySQL prüfen."""
+    m = re.match(r"^ALTER\s+TABLE\s+\S+\s+ADD\s+(?:COLUMN\s+)?(.*)$", kern, re.I | re.S)
+    if m:
+        if not re.match(r"(CONSTRAINT|PRIMARY|FOREIGN|UNIQUE|INDEX|KEY)\b", m.group(1), re.I):
+            _pruefe_spalte(m.group(1))
+        return
+    if re.match(r"^CREATE\s+TABLE\b[^(]*\bAS\b", kern, re.I):
+        return  # CREATE TABLE ... AS SELECT übernimmt die Typen
+    auf, zu = kern.find("("), kern.rfind(")")
+    if auf < 0 or zu < auf:
+        return
+    for teil in _oberste_teile(kern[auf + 1:zu]):
+        teil = teil.strip()
+        if teil and teil.split()[0].upper() not in _TABELLEN_CONSTRAINT:
+            _pruefe_spalte(teil)
+
+
 def uebersetze(stmt):
     """Übersetzt eine MySQL-Anweisung nach SQLite.
     Rückgabe: (sql_oder_None, hinweis_oder_None). sql=None heißt: nichts ausführen."""
@@ -209,6 +262,7 @@ def uebersetze(stmt):
                       "Im Spiel bitte Schlüssel direkt im CREATE TABLE angeben.")
 
     if re.match(r"^(CREATE|ALTER)\s+TABLE", oben):
+        _pruefe_datentypen(kern)
         s = _ersetze_auto_increment(s)
         s = re.sub(r"\)\s*(ENGINE|DEFAULT\s+CHARSET|CHARSET|COLLATE)\b.*$", ")", s, flags=re.I | re.S)
         s = re.sub(r"\bUNSIGNED\b", "", s, flags=re.I)
@@ -238,12 +292,19 @@ class Ergebnis:
 
 def ausfuehren(conn, sql):
     erg = Ergebnis()
+    if _ohne_kommentare(sql).strip() and not _ohne_kommentare(sql).rstrip().endswith(";"):
+        erg.meldungen.append("Hinweis: Am Ende fehlt das ; – bei EINER Anweisung verzeihen das die meisten Programme "
+                             "(auch MySQL Workbench), im mysql-Terminal und zwischen mehreren Anweisungen ist es Pflicht.")
     start = [time.monotonic()]
     conn.set_progress_handler(lambda: 1 if time.monotonic() - start[0] > ZEITLIMIT_SEKUNDEN else 0, 20000)
     try:
         for stmt in zerlege(sql):
             start[0] = time.monotonic()
-            uebersetzt, hinweis = uebersetze(stmt)
+            try:
+                uebersetzt, hinweis = uebersetze(stmt)
+            except MySQLFehler as e:
+                erg.fehler = str(e)
+                return erg
             if hinweis:
                 erg.meldungen.append(hinweis)
             if uebersetzt is None:
@@ -269,8 +330,8 @@ def ausfuehren(conn, sql):
 
 
 FEHLER_UEBERSETZUNG = [
-    (r"no such table: (\S+)", "Tabelle '{0}' gibt es nicht. Tipp: .tabellen zeigt alle Tabellen."),
-    (r"no such column: (\S+)", "Spalte '{0}' gibt es nicht. Tipp: .s tabellenname zeigt die Spalten. (Strings brauchen 'einfache' Anführungszeichen!)"),
+    (r"no such table: (\S+)", "Tabelle '{0}' gibt es nicht. Tipp: SHOW TABLES; zeigt alle Tabellen."),
+    (r"no such column: (\S+)", "Spalte '{0}' gibt es nicht. Tipp: DESCRIBE tabellenname; zeigt die Spalten. (Strings brauchen 'einfache' Anführungszeichen!)"),
     (r"no such function: (\S+)", "Die Funktion '{0}' gibt es hier nicht."),
     (r'near "(.*?)": syntax error', "Syntaxfehler in der Nähe von '{0}'. Prüfe Kommas, Klammern, Schlüsselwörter und Reihenfolge."),
     (r"incomplete input", "Die Anweisung ist unvollständig (fehlt eine Klammer oder ein Anführungszeichen?)."),
@@ -483,8 +544,19 @@ def pruefe_aufgabe_roh(aufgabe, user_sql):
             return False, f"Kontrollabfrage schlägt fehl: {a.fehler}\n  Kontrolle: {pruef_sql}", ist
         ok, msg = vergleiche(a, b, hat_order_by(pruef_sql))
         if not ok:
+            if "pragma_table_info" in pruef_sql:
+                return False, "Die Tabellenstruktur stimmt noch nicht.\n" + _struktur_vergleich(a, b), ist
             return False, f"Die Datenbank sieht danach nicht richtig aus. {msg}\n  Kontrolle: {pruef_sql}", ist
     return True, "", ist
+
+
+def _struktur_vergleich(ist, soll):
+    """Spaltenliste (Name + Typ-Kategorie) lesbar gegenüberstellen."""
+    def zeile(erg):
+        if not erg.zeilen:
+            return "(keine Tabelle / keine Spalten)"
+        return ", ".join(" ".join(str(v) if v not in (None, "") else "(kein Typ)" for v in z) for z in erg.zeilen)
+    return f"  Erwartet: {zeile(soll)}\n  Bei dir:  {zeile(ist)}"
 
 
 def kontrolle(conn, pruef_sql):

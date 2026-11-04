@@ -127,8 +127,8 @@ KAPITEL = {
                         INSERT INTO skills_alt VALUES ('FireMage', 'Feuerball, Meteor'), ('HealBot', 'Heilen'),
                         ('FrostWitch', 'Eislanze, Frostnova, Blizzard');""",
                     "aufgabe": """
-                        Die Tabelle `skills_alt` (schau sie dir mit .s skills_alt an) verletzt die 1NF.
-                        Lege `spieler_skills` an mit den Spalten spieler_name (Text 50) und skill (Text 50),
+                        Die Tabelle `skills_alt` (schau sie dir mit SELECT * FROM skills_alt; an) verletzt die 1NF.
+                        Lege `spieler_skills` an mit den Spalten spieler_name (Zeichenkette bis 50 Zeichen) und skill (Zeichenkette bis 50 Zeichen),
                         Primärschlüssel aus BEIDEN Spalten, und trage alle Skills atomar ein (eine Zeile pro Skill).
                     """,
                     "loesung": """CREATE TABLE spieler_skills (spieler_name VARCHAR(50), skill VARCHAR(50), PRIMARY KEY (spieler_name, skill));
@@ -195,7 +195,7 @@ KAPITEL = {
                         ('Elin', 'Magier', 'Mondschein', 2023), ('Fynn', 'Krieger', NULL, NULL);""",
                     "aufgabe": """
                         `spieler_flach` verletzt die 3NF (gilden_gruendung hängt von gildenname ab, nicht vom Spieler).
-                        Lege `gilden_neu` an: gildenname (Text 50, Primärschlüssel), gruendung (Ganzzahl)
+                        Lege `gilden_neu` an: gildenname (Zeichenkette bis 50 Zeichen, Primärschlüssel), gruendung (Ganzzahl)
                         und befülle sie mit INSERT ... SELECT DISTINCT aus spieler_flach (nur Zeilen mit Gilde).
                     """,
                     "loesung": """CREATE TABLE gilden_neu (gildenname VARCHAR(50) PRIMARY KEY, gruendung INT);
@@ -301,7 +301,7 @@ KAPITEL = {
                     "aufgabe": """
                         1:1-Beziehung: Jeder Spieler hat höchstens EINE Einstellungs-Zeile. Lege `einstellungen` an:
                           einstellung_id → Primärschlüssel (Ganzzahl), spieler_id → Fremdschlüssel auf spieler, darf nur EINMAL vorkommen,
-                          sprache → Text (max. 5), Standard 'de'
+                          sprache → Zeichenkette bis 5 Zeichen, Standard 'de'
                     """,
                     "loesung": """CREATE TABLE einstellungen (einstellung_id INT PRIMARY KEY,
                         spieler_id INT UNIQUE REFERENCES spieler(spieler_id), sprache VARCHAR(5) DEFAULT 'de');""",
@@ -319,8 +319,9 @@ KAPITEL = {
         "titel": "Der chaotische Handelslog",
         "story": """
             # Der Händlergilde ist ihr Handelsbuch über den Kopf gewachsen.
-            Alles steht in EINER Tabelle `handel_flach` – voller Redundanz. Schau sie dir mit .s handel_flach an.
-            Normalisiere sie! (Tipp: antwort.sql + .d)
+            Alles steht in EINER Tabelle `handel_flach` – voller Redundanz. Schau sie dir zuerst mit SELECT * FROM handel_flach; an.
+            Normalisiere sie! Mehrere Anweisungen hintereinander, jede mit ; abgeschlossen.
+            (Im Terminal-Modus geht das bequem über die Datei antwort.sql und .d)
         """,
         "setup": """CREATE TABLE handel_flach (handel_id INT PRIMARY KEY, datum DATE, verkaeufer VARCHAR(50),
                 kaeufer VARCHAR(50), item_name VARCHAR(50), item_typ VARCHAR(20), item_seltenheit VARCHAR(20), preis INT);
@@ -334,10 +335,10 @@ KAPITEL = {
         "typ": "aendern",
         "aufgabe": """
             item_typ und item_seltenheit hängen nur vom item_name ab (transitiv) → raus damit!
-            1. Lege `items` an: item_name (Text 50, Primärschlüssel), item_typ (Text 20), item_seltenheit (Text 20)
+            1. Lege `items` an: item_name (Zeichenkette bis 50 Zeichen, Primärschlüssel), item_typ (Zeichenkette bis 20 Zeichen), item_seltenheit (Zeichenkette bis 20 Zeichen)
                und befülle sie per INSERT ... SELECT DISTINCT aus handel_flach.
-            2. Lege `handel` an: handel_id (Primärschlüssel), datum (Datum), verkaeufer (Text 50), kaeufer (Text 50),
-               item_name (Text 50, Pflicht, Fremdschlüssel auf items), preis (Ganzzahl)
+            2. Lege `handel` an: handel_id (Primärschlüssel), datum (Datum), verkaeufer (Zeichenkette bis 50 Zeichen), kaeufer (Zeichenkette bis 50 Zeichen),
+               item_name (Zeichenkette bis 50 Zeichen, Pflicht, Fremdschlüssel auf items), preis (Ganzzahl)
                und befülle sie per INSERT ... SELECT aus handel_flach.
             3. Lösche `handel_flach`.
         """,

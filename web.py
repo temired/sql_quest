@@ -6,6 +6,7 @@ Läuft komplett lokal (nur Python-Standardbibliothek, kein Internet nötig) und 
 denselben Spielstand (fortschritt.json) wie die Terminal-Version spielen.py.
 """
 import json
+import os
 import sys
 import textwrap
 import threading
@@ -259,15 +260,22 @@ class Handler(BaseHTTPRequestHandler):
             self._json(400, {"fehler": str(e)})
 
 
+class Server(ThreadingHTTPServer):
+    # Unter Windows erlaubt SO_REUSEADDR, dass sich zwei Server denselben Port teilen –
+    # dann würde ein zweites "python web.py" still einen alten Server überlagern.
+    allow_reuse_address = os.name != "nt"
+
+
 def main():
     try:
-        sys.stdout.reconfigure(encoding="utf-8")
+        sys.stdout.reconfigure(encoding="utf-8", line_buffering=True)
     except AttributeError:
         pass
     server = None
-    for port in range(STARTPORT, STARTPORT + 20):
+    startport = int(sys.argv[sys.argv.index("--port") + 1]) if "--port" in sys.argv else STARTPORT
+    for port in range(startport, startport + 20):
         try:
-            server = ThreadingHTTPServer(("127.0.0.1", port), Handler)
+            server = Server(("127.0.0.1", port), Handler)
             break
         except OSError:
             continue

@@ -59,7 +59,7 @@ KAPITEL = {
             "aufgaben": [
                 {
                     "typ": "aendern",
-                    "aufgabe": "Lege `haendler` an: `haendler_id` (Ganzzahl, Primärschlüssel) und `name` (Text, max. 50).",
+                    "aufgabe": "Lege `haendler` an: `haendler_id` (Ganzzahl, Primärschlüssel) und `name` (Zeichenkette bis 50 Zeichen).",
                     "loesung": "CREATE TABLE haendler (haendler_id INT PRIMARY KEY, name VARCHAR(50));",
                     "pruefung": spaltennamen("haendler"),
                     "tests": ["INSERT INTO haendler VALUES (1, 'Gorm')",
@@ -71,7 +71,7 @@ KAPITEL = {
                     "typ": "aendern",
                     "aufgabe": """
                         Lege `schmiede` an: `schmiede_id` (Primärschlüssel, wird AUTOMATISCH hochgezählt)
-                        und `ort` (Text, max. 50). Getestet wird mit INSERTs, die nur den Ort angeben.
+                        und `ort` (Zeichenkette bis 50 Zeichen). Getestet wird mit INSERTs, die nur den Ort angeben.
                     """,
                     "loesung": "CREATE TABLE schmiede (schmiede_id INTEGER PRIMARY KEY AUTOINCREMENT, ort VARCHAR(50));",
                     "auch_richtig": ["CREATE TABLE schmiede (schmiede_id INT AUTO_INCREMENT PRIMARY KEY, ort VARCHAR(50));",
@@ -83,7 +83,7 @@ KAPITEL = {
                 {
                     "typ": "aendern",
                     "aufgabe": """
-                        Lege `quest_fortschritt` an: `spieler_id` (Ganzzahl), `quest_id` (Ganzzahl), `status` (Text, max. 20).
+                        Lege `quest_fortschritt` an: `spieler_id` (Ganzzahl), `quest_id` (Ganzzahl), `status` (Zeichenkette bis 20 Zeichen).
                         Die KOMBINATION aus spieler_id und quest_id soll der Primärschlüssel sein.
                     """,
                     "loesung": "CREATE TABLE quest_fortschritt (spieler_id INT, quest_id INT, status VARCHAR(20), PRIMARY KEY (spieler_id, quest_id));",
@@ -123,9 +123,9 @@ KAPITEL = {
                     "aufgabe": """
                         Lege `accounts` an:
                           account_id     → Primärschlüssel, automatisch hochzählend
-                          email          → Text (max. 255), Pflichtfeld, darf nicht doppelt vorkommen
-                          passwort_hash  → Text (max. 255), Pflichtfeld
-                          rolle          → Text (max. 20), Standardwert 'spieler'
+                          email          → Zeichenkette bis 255 Zeichen, Pflichtfeld, darf nicht doppelt vorkommen
+                          passwort_hash  → Zeichenkette bis 255 Zeichen, Pflichtfeld
+                          rolle          → Zeichenkette bis 20 Zeichen, Standardwert 'spieler'
                     """,
                     "loesung": """CREATE TABLE accounts (
                         account_id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -143,8 +143,8 @@ KAPITEL = {
                 {
                     "typ": "aendern",
                     "aufgabe": """
-                        Lege `charaktere` an: `char_id` (Primärschlüssel, automatisch), `vorname` (Text 30, Pflicht),
-                        `nachname` (Text 30, Pflicht), `level` (Ganzzahl, Pflicht, Standard 1).
+                        Lege `charaktere` an: `char_id` (Primärschlüssel, automatisch), `vorname` (Zeichenkette bis 30 Zeichen, Pflicht),
+                        `nachname` (Zeichenkette bis 30 Zeichen, Pflicht), `level` (Ganzzahl, Pflicht, Standard 1).
                         Die Kombination aus vorname + nachname darf nur EINMAL vorkommen.
                     """,
                     "loesung": """CREATE TABLE charaktere (
@@ -198,7 +198,7 @@ KAPITEL = {
                     "aufgabe": """
                         Lege `auktionen` an:
                           auktion_id     → Primärschlüssel (Ganzzahl)
-                          gegenstand     → Text (max. 50), Pflichtfeld
+                          gegenstand     → Zeichenkette bis 50 Zeichen, Pflichtfeld
                           startpreis     → Ganzzahl, muss größer als 0 sein
                           dauer_stunden  → Ganzzahl, nur 1 bis 72 erlaubt
                     """,
@@ -220,8 +220,8 @@ KAPITEL = {
                 {
                     "typ": "aendern",
                     "aufgabe": """
-                        Lege `reittiere` an: `tier_id` (Primärschlüssel, Ganzzahl), `name` (Text 30),
-                        `art` (Text 20) – erlaubt sind NUR 'Pferd', 'Greif' und 'Drache',
+                        Lege `reittiere` an: `tier_id` (Primärschlüssel, Ganzzahl), `name` (Zeichenkette bis 30 Zeichen),
+                        `art` (Zeichenkette bis 20 Zeichen) – erlaubt sind NUR 'Pferd', 'Greif' und 'Drache',
                         `geschwindigkeit` (Ganzzahl) und `max_geschwindigkeit` (Ganzzahl).
                         Zusätzlich: geschwindigkeit darf nie größer als max_geschwindigkeit sein.
                     """,
@@ -321,7 +321,7 @@ KAPITEL = {
                     "typ": "aendern",
                     "aufgabe": """
                         Lege `erfolge` an: `erfolg_id` (Primärschlüssel, Ganzzahl), `spieler_id` (Fremdschlüssel auf spieler),
-                        `titel` (Text 50). Wird ein Spieler gelöscht, sollen seine Erfolge AUTOMATISCH mitgelöscht werden.
+                        `titel` (Zeichenkette bis 50 Zeichen). Wird ein Spieler gelöscht, sollen seine Erfolge AUTOMATISCH mitgelöscht werden.
                     """,
                     "loesung": """CREATE TABLE erfolge (
                         erfolg_id INT PRIMARY KEY,
@@ -339,7 +339,7 @@ KAPITEL = {
                     "typ": "aendern",
                     "aufgabe": """
                         Probier die Regel aus! `spieler.gilde_id` hat ON DELETE SET NULL.
-                        Lösche die Gilde 'DragonSlayers' aus `gilden` – und schau danach mit .p nach,
+                        Lösche die Gilde 'DragonSlayers' aus `gilden` – und schau danach mit SELECT nach,
                         was mit ShadowKnight und NoobSlayer passiert ist.
                     """,
                     "loesung": "DELETE FROM gilden WHERE gildenname = 'DragonSlayers';",

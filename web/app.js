@@ -92,7 +92,9 @@ function markup(text) {
       const code = [];
       while (i < zeilen.length && (zeilen[i].startsWith("    ") ||
              (zeilen[i].trim() === "" && (zeilen[i + 1] || "").startsWith("    ")))) code.push(zeilen[i++].slice(4));
-      html += `<pre class="code">${highlight(code.join("\n"))}</pre>`;
+      // Übersichtstabellen (Spalten mit | getrennt) nicht als SQL einfärben – nur echten Code
+      const istTabelle = code.some((z) => /(?<!\|)\|(?!\|)/.test(z));
+      html += `<pre class="code">${istTabelle ? esc(code.join("\n")) : highlight(code.join("\n"))}</pre>`;
     }
     else if (z.startsWith("# ")) { flush(); html += `<h3>${inline(z.slice(2))}</h3>`; i++; }
     else if (z.startsWith("! ")) { flush(); block("! ", "mysql"); }
@@ -234,6 +236,11 @@ function linksReiter(name) {
 
 const TYP_TEXT = { abfrage: "Abfrage – das Ergebnis wird verglichen", aendern: "Datenbank ändern – der Zustand wird geprüft", quiz: "Quiz" };
 
+// Eingerückte Zeilen (Spaltenlisten mit ausgerichteten Pfeilen) in Festbreitenschrift, damit sie bündig sind
+function aufgabentextHtml(text) {
+  return text.split("\n").map((z) => /^\s{2,}\S/.test(z) ? `<span class="eingerueckt">${inline(z)}</span>` : inline(z)).join("\n");
+}
+
 function zeichneAufgabe(a) {
   const kopf = a.ist_boss
     ? `<h1 class="titel boss">☠ Bosskampf: ${esc(a.lektion_titel)}</h1>`
@@ -246,7 +253,7 @@ function zeichneAufgabe(a) {
       <span class="abz">${TYP_TEXT[a.typ]}</span>
       ${a.erledigt ? `<span class="abz ok">✔ gelöst (${a.xp_erhalten} XP)</span>` : ""}
     </div>
-    <div class="aufgabentext">${inline(a.text)}</div>
+    <div class="aufgabentext">${aufgabentextHtml(a.text)}</div>
     <div id="hinweise"></div>
     <div class="theorie-link"><button class="knopf leise" id="btn-zur-theorie">📖 Theorie ${a.ist_boss ? "(Story)" : "zur Lektion"} lesen</button></div>`;
   $("#btn-zur-theorie").onclick = () => linksReiter("theorie");

@@ -297,7 +297,8 @@ KAPITEL = {
         "titel": "Die große Gildenreform",
         "story": """
             # Der König verlangt eine Gildenreform!
-            Mehrere Schritte – am besten in antwort.sql schreiben und mit .d abgeben.
+            Mehrere Anweisungen hintereinander, jede mit ; abgeschlossen.
+            (Im Terminal-Modus geht das bequem über die Datei antwort.sql und .d)
         """,
         "typ": "aendern",
         "aufgabe": """
