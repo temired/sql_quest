@@ -1,6 +1,6 @@
 # SQL-Quest ⚔️
 
-Ein Terminal-Spiel, das dir SQL komplett beibringt – von `SELECT *` bis zu Indizes und Normalisierung.
+Ein Lernspiel, das dir SQL komplett beibringt – von `SELECT *` bis zu Indizes und Normalisierung.
 Gespielt wird in der RPG-Spielwelt aus dem Unterricht (gilden, spieler, gegenstaende, inventar, monster, quests).
 
 ## Herunterladen & Starten
@@ -10,9 +10,15 @@ Voraussetzung: [Python 3.12 oder neuer](https://www.python.org/downloads/) (unte
    ```
    git clone https://github.com/temired/sql_quest.git
    ```
-2. Starten:
-   - Windows: **Doppelklick auf `start.bat`**
-   - oder im Terminal im Ordner `sql_quest`: `python spielen.py`
+2. Starten – such dir aus, wie du spielen willst (beide nutzen denselben Spielstand):
+
+   | | Windows | Terminal |
+   |---|---|---|
+   | 🖥️ **Mit Oberfläche** (Aufgabe links, SQL-Editor rechts) | Doppelklick auf `start_web.bat` | `python web.py` |
+   | ⌨️ **Im Terminal** | Doppelklick auf `start.bat` | `python spielen.py` |
+
+   Die Oberfläche öffnet sich im Browser, läuft aber komplett lokal auf deinem Rechner (auch ohne Internet).
+   Das schwarze Fenster dabei offen lassen – zum Beenden schließen oder Strg+C.
 
 Sonst ist nichts zu installieren, und eine MySQL-Verbindung ist nicht nötig – das Spiel nutzt SQLite,
 das in Python eingebaut ist, und versteht die wichtigsten MySQL-Schreibweisen
@@ -23,13 +29,19 @@ Dein Fortschritt wird automatisch nach jeder gelösten Aufgabe in `fortschritt.j
 im Spielordner, auf deinem Rechner. Nach dem Beenden oder einem Neustart des PCs geht es genau dort weiter.
 - Die Datei wird **nicht** auf GitHub hochgeladen (steht in `.gitignore`) – jeder hat seinen eigenen Spielstand.
 - Lädst du das Spiel neu herunter, kopiere deine alte `fortschritt.json` (und `sandbox.db`) in den neuen Ordner.
-- Neu anfangen: im Hauptmenü **R**.
+- Neu anfangen: im Terminal-Hauptmenü **R** oder in der Oberfläche über ⚔️ SQL-Quest → „Fortschritt zurücksetzen“.
 
 ## So funktioniert's
 - 11 Kapitel, jedes mit Lektionen (Theorie → Aufgaben) und einem **Bosskampf**.
 - Du tippst SQL, das Spiel führt es auf einer frischen Datenbank aus und vergleicht das **Ergebnis**
   mit der Musterlösung. Es zählt also jede richtige Lösung, nicht nur genau eine Schreibweise.
 - XP sammeln, Ränge aufsteigen. Hinweise kosten ein paar XP, die Musterlösung fast alle.
+
+**In der Oberfläche:** `Strg+Enter` führt aus, `Strg+Shift+Enter` gibt ab, `Strg+/` kommentiert Zeilen aus.
+Links gibt es die Reiter Aufgabe, Theorie und Tabellen (Klick auf einen Spaltennamen fügt ihn in den Editor ein),
+unten rechts Ergebnis, Erwartet und Lösung. Mit 🧪 Sandbox kannst du frei üben, ⚔️ SQL-Quest öffnet die Kapitelübersicht.
+
+**Im Terminal:**
 
 | Befehl | Wirkung |
 |---|---|
@@ -51,6 +63,7 @@ im Spielordner, auf deinem Rechner. Nach dem Beenden oder einem Neustart des PCs
 | `sandbox.db` | Deine freie Spielwiese (Menü → S), bleibt gespeichert |
 | `fortschritt.json` | Dein Spielstand |
 | `daten/welt.sql` | Die Spielwelt (Daten des Lehrers + 3 gildenlose Spieler, 1 Gegenstand ohne Wert, 1 Quest ohne Monster für NULL-Übungen) |
+| `web.py`, `web/` | Die Oberfläche (lokaler Mini-Server + Webseite, nur Python-Standardbibliothek) |
 | `test_loesungen.py` | Selbsttest: prüft, dass alle Musterlösungen funktionieren |
 
 ## Unterschiede zu MySQL, die du kennen solltest

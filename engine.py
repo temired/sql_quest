@@ -433,19 +433,25 @@ def schema_text(conn, tabelle):
 # Aufgaben prüfen
 # ---------------------------------------------------------------------------
 def pruefe_aufgabe(aufgabe, user_sql):
-    """Prüft eine Aufgabe. Rückgabe: (ok, meldung, ausgabe_text)."""
+    """Prüft eine Aufgabe. Rückgabe: (ok, meldung, ist_text)."""
+    ok, meldung, erg = pruefe_aufgabe_roh(aufgabe, user_sql)
+    return ok, meldung, ergebnis_text(erg)
+
+
+def pruefe_aufgabe_roh(aufgabe, user_sql):
+    """Wie pruefe_aufgabe, liefert aber das Ergebnis-Objekt statt Text."""
     typ = aufgabe.get("typ", "abfrage")
     setup = aufgabe.get("setup")
     ohne = _ohne_kommentare(user_sql)
     for wort in aufgabe.get("muss_enthalten", []):
         if not re.search(r"\b" + re.escape(wort).replace(r"\ ", r"\s+") + r"\b", ohne, re.I):
             erg = ausfuehren(neue_db(setup), user_sql)
-            return False, f"Diese Aufgabe soll mit {wort} gelöst werden.", ergebnis_text(erg)
+            return False, f"Diese Aufgabe soll mit {wort} gelöst werden.", erg
     if typ == "abfrage":
         soll = ausfuehren(neue_db(setup), aufgabe["loesung"])
         ist = ausfuehren(neue_db(setup), user_sql)
         if ist.fehler:
-            return False, "", ergebnis_text(ist)
+            return False, "", ist
         sortiert = aufgabe.get("sortiert", hat_order_by(aufgabe["loesung"]))
         ok, msg = vergleiche(ist, soll, sortiert, aufgabe.get("spalten", False))
         if ok and aufgabe.get("plan"):
@@ -453,33 +459,32 @@ def pruefe_aufgabe(aufgabe, user_sql):
             if sorted(p_ist.zeilen or []) != sorted(p_soll.zeilen or []):
                 return False, ("Das Ergebnis stimmt, aber die Datenbank kann für deine Abfrage den Index nicht nutzen.\n"
                                "  Dein Plan:     " + " | ".join(z[0] for z in p_ist.zeilen or []) +
-                               "\n  Gewünschter Plan: " + " | ".join(z[0] for z in p_soll.zeilen or [])), ergebnis_text(ist)
-        return ok, msg, ergebnis_text(ist)
+                               "\n  Gewünschter Plan: " + " | ".join(z[0] for z in p_soll.zeilen or [])), ist
+        return ok, msg, ist
 
     # typ == "aendern": Zustand der DB nach der Anweisung vergleichen
     db_ist, db_soll = neue_db(setup), neue_db(setup)
     ist = ausfuehren(db_ist, user_sql)
-    ausgabe = ergebnis_text(ist)
     if ist.fehler and not aufgabe.get("fehler_erlaubt"):
-        return False, "", ausgabe
+        return False, "", ist
     soll = ausfuehren(db_soll, aufgabe["loesung"])
     if soll.fehler and not aufgabe.get("fehler_erlaubt"):
-        return False, f"(Interner Fehler in der Musterlösung: {soll.fehler})", ausgabe
+        return False, f"(Interner Fehler in der Musterlösung: {soll.fehler})", ist
     for test_sql in _liste(aufgabe.get("tests")):
         a_ok = not ausfuehren(db_ist, test_sql).fehler
         b_ok = not ausfuehren(db_soll, test_sql).fehler
         if a_ok != b_ok:
             soll_txt = "ERLAUBT sein" if b_ok else "ABGELEHNT werden"
             ist_txt = "wurde abgelehnt" if not a_ok else "ging durch"
-            return False, f"Test: {test_sql}\n  → sollte {soll_txt}, {ist_txt} aber.", ausgabe
+            return False, f"Test: {test_sql}\n  → sollte {soll_txt}, {ist_txt} aber.", ist
     for pruef_sql in _liste(aufgabe.get("pruefung")):
         a, b = kontrolle(db_ist, pruef_sql), kontrolle(db_soll, pruef_sql)
         if a.fehler:
-            return False, f"Kontrollabfrage schlägt fehl: {a.fehler}\n  Kontrolle: {pruef_sql}", ausgabe
+            return False, f"Kontrollabfrage schlägt fehl: {a.fehler}\n  Kontrolle: {pruef_sql}", ist
         ok, msg = vergleiche(a, b, hat_order_by(pruef_sql))
         if not ok:
-            return False, f"Die Datenbank sieht danach nicht richtig aus. {msg}\n  Kontrolle: {pruef_sql}", ausgabe
-    return True, "", ausgabe
+            return False, f"Die Datenbank sieht danach nicht richtig aus. {msg}\n  Kontrolle: {pruef_sql}", ist
+    return True, "", ist
 
 
 def kontrolle(conn, pruef_sql):
@@ -497,6 +502,17 @@ def plan(conn, sql):
         erg.spalten = ["plan"]
         erg.zeilen = [(re.sub(r"USING (COVERING )?INDEX \S+", "USING INDEX", z[-1]),) for z in erg.zeilen]
     return erg
+
+
+def erwartet(aufgabe):
+    """Was als Ergebnis erwartet wird: Liste von (titel, Ergebnis). Leer, wenn nur Tests prüfen."""
+    if aufgabe.get("typ", "abfrage") == "abfrage":
+        return [("Erwartetes Ergebnis", ausfuehren(neue_db(aufgabe.get("setup")), aufgabe["loesung"]))]
+    conn = neue_db(aufgabe.get("setup"))
+    ausfuehren(conn, aufgabe["loesung"])
+    for test_sql in _liste(aufgabe.get("tests")):
+        ausfuehren(conn, test_sql)
+    return [(q, kontrolle(conn, q)) for q in _liste(aufgabe.get("pruefung"))]
 
 
 def _liste(x):

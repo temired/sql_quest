@@ -2,23 +2,18 @@
 SQL-Quest – lerne SQL komplett, Kapitel für Kapitel, im Terminal.
 Start:  python spielen.py
 """
-import json
 import os
 import re
 import sys
 import textwrap
 
 from engine import (BASIS, F, farbe, neue_db, ausfuehren, ergebnis_text, schema_text,
-                    leere_tabellenliste, pruefe_aufgabe, tabelle_text)
+                    leere_tabellenliste, pruefe_aufgabe, tabelle_text, erwartet)
 from kapitel import ALLE_KAPITEL
+from spielstand import Fortschritt, aufgaben_ids, basis_xp as berechne_basis_xp, xp_fuer_loesung, xp_fuer_quiz
 
-FORTSCHRITT_DATEI = BASIS / "fortschritt.json"
 ANTWORT_DATEI = BASIS / "antwort.sql"
 SANDBOX_DATEI = BASIS / "sandbox.db"
-
-XP = {"abfrage": 10, "aendern": 10, "quiz": 5, "boss": 30}
-RAENGE = [(0, "Bauer"), (60, "Lehrling"), (180, "Knappe"), (350, "Abenteurer"), (550, "Ritter der Tabellen"),
-          (800, "Magier der Abfragen"), (1100, "Join-Meister"), (1400, "Index-Großmeister"), (1700, "Datenbank-Drache")]
 
 BEFEHLE_HILFE = f"""{farbe('Befehle während einer Aufgabe:', F.FETT)}
   {farbe('.h', F.CYAN)}          nächster Hinweis (kostet etwas XP)
@@ -32,46 +27,6 @@ BEFEHLE_HILFE = f"""{farbe('Befehle während einer Aufgabe:', F.FETT)}
   {farbe('.w', F.CYAN)}          Aufgabe überspringen
   {farbe('.m', F.CYAN)}          zurück ins Menü
 SQL über mehrere Zeilen: mit {farbe(';', F.CYAN)} beenden (oder eine leere Zeile drücken)."""
-
-
-# ---------------------------------------------------------------------------
-# Fortschritt
-# ---------------------------------------------------------------------------
-class Fortschritt:
-    def __init__(self):
-        self.daten = {"erledigt": {}}
-        if FORTSCHRITT_DATEI.exists():
-            try:
-                self.daten = json.loads(FORTSCHRITT_DATEI.read_text(encoding="utf-8"))
-            except (json.JSONDecodeError, OSError):
-                pass
-        self.daten.setdefault("erledigt", {})
-
-    def speichern(self):
-        FORTSCHRITT_DATEI.write_text(json.dumps(self.daten, indent=2, ensure_ascii=False), encoding="utf-8")
-
-    def erledigt(self, aid):
-        return aid in self.daten["erledigt"]
-
-    def setze(self, aid, xp):
-        alt = self.daten["erledigt"].get(aid, -1)
-        if xp > alt:
-            self.daten["erledigt"][aid] = xp
-            self.speichern()
-
-    @property
-    def xp(self):
-        return sum(self.daten["erledigt"].values())
-
-    @property
-    def rang(self):
-        return [name for grenze, name in RAENGE if self.xp >= grenze][-1]
-
-    def naechster_rang(self):
-        for grenze, name in RAENGE:
-            if self.xp < grenze:
-                return grenze, name
-        return None
 
 
 # ---------------------------------------------------------------------------
@@ -144,22 +99,13 @@ def balken(anteil, breite=20):
     return farbe("█" * voll, F.GRUEN) + farbe("░" * (breite - voll), F.DIM)
 
 
-def aufgaben_ids(k):
-    ids = []
-    for li, lek in enumerate(k["lektionen"], 1):
-        ids += [f"{k['nr']}.{li}.{ai}" for ai in range(1, len(lek["aufgaben"]) + 1)]
-    if k.get("boss"):
-        ids.append(f"{k['nr']}.B")
-    return ids
-
-
 # ---------------------------------------------------------------------------
 # Eine Aufgabe spielen
 # ---------------------------------------------------------------------------
 def spiele_aufgabe(aufgabe, aid, kopf, fp, theorie=None, ist_boss=False):
     """Rückgabe: 'weiter', 'menu'"""
     typ = aufgabe.get("typ", "abfrage")
-    basis_xp = XP["boss"] if ist_boss else XP[typ]
+    basis_xp = berechne_basis_xp(aufgabe, ist_boss)
     print()
     print(farbe("═" * 72, F.BLAU))
     print(farbe(kopf, F.FETT, F.BLAU) + farbe(f"   (+{basis_xp} XP)", F.GELB)
@@ -238,7 +184,7 @@ def spiele_aufgabe(aufgabe, aid, kopf, fp, theorie=None, ist_boss=False):
         if ausgabe:
             print(ausgabe)
         if ok:
-            xp = 2 if loesung_gesehen else max(3, basis_xp - 3 * hinweis_nr)
+            xp = xp_fuer_loesung(basis_xp, hinweis_nr, loesung_gesehen)
             vorher = fp.rang
             fp.setze(aid, xp)
             print(farbe(f"\n✔ RICHTIG!  +{xp} XP", F.GRUEN, F.FETT)
@@ -276,7 +222,7 @@ def spiele_quiz(aufgabe, aid, basis_xp, fp):
             continue
         versuche += 1
         if int(antw) == aufgabe["richtig"]:
-            xp = basis_xp if versuche == 1 else 1
+            xp = xp_fuer_quiz(basis_xp, versuche)
             fp.setze(aid, xp)
             print(farbe(f"✔ RICHTIG!  +{xp} XP", F.GRUEN, F.FETT) + farbe(f"   (Gesamt: {fp.xp} XP · Rang: {fp.rang})", F.DIM))
         else:
@@ -294,22 +240,15 @@ def spiele_quiz(aufgabe, aid, basis_xp, fp):
 
 
 def zeige_erwartet(aufgabe):
-    if aufgabe.get("typ", "abfrage") == "abfrage":
-        erg = ausfuehren(neue_db(aufgabe.get("setup")), aufgabe["loesung"])
-        print(farbe("Erwartetes Ergebnis:", F.LILA, F.FETT))
-        print(tabelle_text(erg.spalten, erg.zeilen))
-        return
-    conn = neue_db(aufgabe.get("setup"))
-    ausfuehren(conn, aufgabe["loesung"])
-    pruef = aufgabe.get("pruefung")
-    if not pruef:
+    teile = erwartet(aufgabe)
+    if not teile:
         print(farbe("Hier wird geprüft, ob deine Tabelle sich richtig verhält (Tests mit INSERTs). "
                     "Lies die Aufgabe genau – jede geforderte Regel wird getestet.", F.DIM))
         return
-    print(farbe("So soll die Datenbank danach aussehen:", F.LILA, F.FETT))
-    for q in [pruef] if isinstance(pruef, str) else pruef:
-        erg = ausfuehren(conn, q)
-        print(farbe(q, F.DIM))
+    if aufgabe.get("typ", "abfrage") != "abfrage":
+        print(farbe("So soll die Datenbank danach aussehen:", F.LILA, F.FETT))
+    for titel, erg in teile:
+        print(farbe(titel, F.LILA if titel.startswith("Erwartet") else F.DIM, F.FETT))
         print(tabelle_text(erg.spalten, erg.zeilen) if erg.hat_tabelle else farbe(erg.fehler or "", F.ROT))
 
 
@@ -482,8 +421,7 @@ def hauptmenue(fp):
             weiter()
         elif wahl == "r":
             if eingabe("Wirklich ALLES zurücksetzen? (ja/nein) ").strip().lower() == "ja":
-                fp.daten = {"erledigt": {}}
-                fp.speichern()
+                fp.zuruecksetzen()
         elif wahl.isdigit():
             k = next((k for k in ALLE_KAPITEL if k["nr"] == int(wahl)), None)
             if k:

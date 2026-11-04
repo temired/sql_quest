@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SQL-Quest</title>
+<link rel="stylesheet" href="style.css">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⚔️</text></svg>">
+</head>
+<body>
+<header class="kopf">
+  <button class="logo" id="btn-karte" title="Kapitelübersicht">⚔️ SQL-Quest</button>
+  <select id="wahl-kapitel" title="Kapitel"></select>
+  <select id="wahl-aufgabe" title="Aufgabe"></select>
+  <button class="rund" id="btn-zurueck" title="Vorherige Aufgabe">←</button>
+  <button class="rund gold" id="btn-weiter" title="Nächste Aufgabe">→</button>
+  <div class="luecke"></div>
+  <button class="knopf leise" id="btn-sandbox" title="Freie SQL-Konsole">🧪 Sandbox</button>
+  <div class="rang">
+    <div class="rang-zeile"><span id="rang-name">Bauer</span><span id="rang-xp">0 XP</span></div>
+    <div class="xp-balken"><div id="xp-fuellung"></div></div>
+  </div>
+</header>
+
+<main class="haupt" id="haupt">
+  <section class="links" id="links">
+    <nav class="reiter" id="reiter-links">
+      <button data-reiter="aufgabe" class="aktiv">Aufgabe</button>
+      <button data-reiter="theorie">Theorie</button>
+      <button data-reiter="tabellen">Tabellen</button>
+    </nav>
+    <div class="inhalt" id="inhalt-aufgabe"></div>
+    <div class="inhalt versteckt" id="inhalt-theorie"></div>
+    <div class="inhalt versteckt" id="inhalt-tabellen"></div>
+  </section>
+
+  <div class="trenner senkrecht" id="trenner-mitte" title="Ziehen zum Ändern der Breite"></div>
+
+  <section class="rechts" id="rechts">
+    <div class="dateireiter"><span class="datei" id="dateiname">aufgabe.sql</span><span class="tastenhilfe">Strg+Enter = Ausführen · Strg+Shift+Enter = Abgeben</span></div>
+    <div class="editor" id="editor">
+      <div class="zeilennummern" id="zeilennummern"></div>
+      <div class="code-flaeche">
+        <pre class="hervorhebung" aria-hidden="true"><code id="hervorhebung"></code></pre>
+        <textarea id="code" spellcheck="false" autocomplete="off" autocapitalize="off" placeholder="-- Schreib hier dein SQL …"></textarea>
+      </div>
+    </div>
+    <div class="quiz versteckt" id="quiz"></div>
+
+    <div class="werkzeuge" id="werkzeuge">
+      <button class="knopf gruen" id="btn-abgeben">▶ Abgeben</button>
+      <button class="knopf" id="btn-ausfuehren">▷ Ausführen</button>
+      <button class="knopf leise" id="btn-hinweis">💡 Hinweis</button>
+      <button class="knopf leise" id="btn-erwartet">🎯 Erwartet</button>
+      <button class="knopf leise" id="btn-loesung">👁 Lösung</button>
+      <div class="luecke"></div>
+      <button class="knopf leise" id="btn-sandbox-reset" title="Spielwelt in der Sandbox neu laden">↺ Welt neu laden</button>
+      <button class="knopf leise" id="btn-leeren" title="Editor leeren">🗑</button>
+    </div>
+
+    <div class="trenner waagerecht" id="trenner-unten" title="Ziehen zum Ändern der Höhe"></div>
+
+    <div class="ausgabe" id="ausgabe-bereich">
+      <nav class="reiter klein" id="reiter-ausgabe">
+        <button data-ausgabe="ergebnis" class="aktiv">Ergebnis</button>
+        <button data-ausgabe="erwartet">Erwartet</button>
+        <button data-ausgabe="loesung">Lösung</button>
+      </nav>
+      <div class="ausgabe-inhalt" id="ausgabe-ergebnis"><p class="leer">Noch nichts ausgeführt. Tipp: Strg+Enter.</p></div>
+      <div class="ausgabe-inhalt versteckt" id="ausgabe-erwartet"></div>
+      <div class="ausgabe-inhalt versteckt" id="ausgabe-loesung"></div>
+    </div>
+  </section>
+</main>
+
+<div class="overlay versteckt" id="karte">
+  <div class="karte-box">
+    <div class="karte-kopf">
+      <h2>🗺️ Kapitelübersicht</h2>
+      <button class="rund" id="btn-karte-zu" title="Schließen">✕</button>
+    </div>
+    <div id="karte-inhalt"></div>
+    <div class="karte-fuss">
+      <span class="leise-text">Spielstand: fortschritt.json – gemeinsam mit der Terminal-Version.</span>
+      <button class="knopf rot-leise" id="btn-reset">Fortschritt zurücksetzen</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast versteckt" id="toast"></div>
+
+<script src="app.js"></script>
+</body>
+</html>
